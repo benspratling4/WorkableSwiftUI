@@ -11,13 +11,12 @@ import SwiftUI
 
 
 /// A PagedLoadingRefreshablePublishedElementsController that uses a DataFetchingService to get elements and loading tokens
-open class ServiceLoadingPagedPublishedElementsController<Element, LoadToken, DataService:DataPageFetchingService>
+open class ServiceLoadingPagedPublishedElementsController<Element, LoadToken>
 	: LoadingTokenBasedPagedLoadingRefreshablePublishedElementsController<Element, LoadToken>
 	where Element : Identifiable
-		, DataService.Element == Element
-		, DataService.LoadMoreToken == LoadToken {
+		{
 	
-	public init(service:DataService) {
+	public init(service:any DataPageFetchingService<Element, LoadToken>) {
 		self.service = service
 	}
 	
@@ -50,7 +49,7 @@ open class ServiceLoadingPagedPublishedElementsController<Element, LoadToken, Da
 	
 	private var task:Task<Void, Error>?
 	
-	public let service:DataService
+	public let service:any DataPageFetchingService<Element, LoadToken>
 	
 	//MARK: - LoadingTokenBasedPagedLoadingRefreshablePublishedElementsController overrides
 			
