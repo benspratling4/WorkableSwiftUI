@@ -47,7 +47,7 @@ open class ServiceLoadingPagedPublishedElementsController<Element, LoadToken>
 		}
 	}
 	
-	private var task:Task<Void, Error>?
+	public private(set) var task:Task<Void, Error>?
 	
 	public let service:any DataPageFetchingService<Element, LoadToken>
 	
