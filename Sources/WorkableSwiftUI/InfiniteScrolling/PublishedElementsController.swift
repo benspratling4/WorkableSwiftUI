@@ -10,5 +10,9 @@ import Combine
 
 
 open class PublishedElementsController<Element> : ObservableObject where Element : Identifiable {
+	
+	public init() {
+	}
+	
 	@MainActor @Published open var elements:[Element] = []
 }
