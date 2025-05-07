@@ -65,6 +65,33 @@ struct AttributedStringEditorImpl : UIViewRepresentable {
 	@Environment(\.uiTextInputTraits)
 	var uiTextInputTraits
 	
+	@Environment(\.attributedStringEditorPasteHandlers)
+	var attributedStringEditorPasteHandlers
+	
+	
+	func resolvingPasteConfiguration(textView:AttributedStringEditorTextView, context: Context) {
+		let types:[String] = [UTType](attributedStringEditorPasteHandlers.keys).map(\.identifier)
+		
+		if let existing = textView.pasteConfiguration
+			,existing.acceptableTypeIdentifiers
+			.filter({
+				types.contains($0)
+			})
+			.isEmpty  {
+			let newIds = types.filter({
+				!existing.acceptableTypeIdentifiers.contains($0)
+			})
+			if !newIds.isEmpty {
+				existing.addAcceptableTypeIdentifiers(newIds)
+			}
+		}
+		else {
+			//make new configuration
+			let configuration = UIPasteConfiguration(acceptableTypeIdentifiers: types)
+			textView.pasteConfiguration = configuration
+		}
+	}
+	
 	
 	//MARK: - UIViewRepresentable
 	
@@ -101,6 +128,8 @@ struct AttributedStringEditorImpl : UIViewRepresentable {
 		stateController.isUpdating = false
 		
 		textView.delegate = context.coordinator
+		
+		resolvingPasteConfiguration(textView: textView, context: context)
 
 		return textView
 	}
@@ -111,6 +140,8 @@ struct AttributedStringEditorImpl : UIViewRepresentable {
 		for traitApplier in uiTextInputTraits.values {
 			traitApplier.applyUITrait(uiView)
 		}
+		
+		resolvingPasteConfiguration(textView: uiView, context: context)
 		
 		guard !stateController.isUpdating else {
 			return
@@ -213,6 +244,44 @@ extension AttributedStringEditorImpl  {
 		}
 		
 		
+		func handlePaste(_ textView: UITextView, itemProviders:[NSItemProvider]) {
+			for itemProvider in itemProviders {
+				var typeHandler:(UTType, AttributedStringPasteHandler)?
+				for identifier in itemProvider.registeredTypeIdentifiers {
+					guard let providedType = UTType(identifier) else { continue }
+					var bestType:(UTType, AttributedStringPasteHandler)?
+					for (aType, pasteHandler) in self.attributedStringEditor.attributedStringEditorPasteHandlers {
+						guard providedType.conforms(to: aType) else { continue }
+						guard let existingBestType = bestType else {
+							bestType = (aType, pasteHandler)
+							continue
+						}
+						
+						//get the more specific one
+						if aType.conforms(to:existingBestType.0 ) {
+							//atype is more specific
+							bestType = (aType, pasteHandler)
+						}
+					}
+					if let bestType {
+						typeHandler = bestType
+						break
+					}
+ 				}
+				
+				guard let typeHandler else {
+					//if we didn't find a handler for that item provider, that's ok, we'll paste what we can
+					continue
+				}
+				Task {
+					try await typeHandler.1.handleAttributedStringPaste(itemProvider: itemProvider, textInput: textView)
+					//we don't break here other item providers may also paste
+				}
+				
+			}
+		}
+		
+		
 		//MARK: - UITextViewDelegate
 		
 		func textViewShouldBeginEditing(_ textView: UITextView) -> Bool {
@@ -290,6 +359,51 @@ extension AttributedStringEditorImpl  {
 
 @available(iOS 15.0, *)
 class AttributedStringEditorTextView : UITextView {
+	
+	
+	override func canPaste(_ itemProviders: [NSItemProvider]) -> Bool {
+		//if any item provider has data for any of the types in our supported array, use it
+		guard let pasteConfiguration else { return false }
+		for identifier in pasteConfiguration.acceptableTypeIdentifiers {
+			for itemProvider in itemProviders {
+				if itemProvider.hasItemConformingToTypeIdentifier(identifier) {
+					return true
+				}
+			}
+		}
+		//should we allow super here?
+		return super.canPaste(itemProviders)
+	}
+	
+	
+	override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+		if action == #selector(UIResponderStandardEditActions.paste(_:)) {
+			return canPaste(UIPasteboard.general.itemProviders) ?? false
+		}
+		else {
+			return super.canPerformAction(action, withSender: sender)
+		}
+	}
+	
+	override func paste(itemProviders: [NSItemProvider]) {
+//		print("paste \(itemProviders)")
+		if let coordinator = delegate as? AttributedStringEditorImpl.Coordinator {
+			coordinator.handlePaste(self, itemProviders: itemProviders)
+		}
+		else {
+			super.paste(itemProviders: itemProviders)
+		}
+	}
+	
+	override func paste(_ sender: Any?) {
+//		print("paste(sender)")
+		if let coordinator = delegate as? AttributedStringEditorImpl.Coordinator {
+			coordinator.handlePaste(self, itemProviders: UIPasteboard.general.itemProviders)
+		}
+		else {
+			super.paste(sender)
+		}
+	}
 	
 	open override var canBecomeFirstResponder: Bool {
 		true
