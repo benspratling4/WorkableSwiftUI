@@ -10,7 +10,7 @@ import Foundation
 
 extension Array where Element : Identifiable {
 	
-	mutating func appendContentsWithoutCrashingFromDuplicates(_ contents:[Element]) {
+	public mutating func appendContentsWithoutCrashingFromDuplicates(_ contents:[Element]) {
 		var allIds:Set<Element.ID> = Set(self.map({ $0.id }))
 		for item in contents {
 			if !allIds.contains(item.id) {
