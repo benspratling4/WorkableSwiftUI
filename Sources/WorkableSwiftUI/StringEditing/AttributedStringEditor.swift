@@ -174,7 +174,7 @@ struct AttributedStringEditorImpl : UIViewRepresentable {
 
 		// iOS 16 somtimes returns 0 width from systemLayoutSizeFitting, so fix that.
 		size.width = width
-		size.height = max(size.height, 80.0)
+		size.height = max(size.height, 24.0)
 		return size
 	}
 	
