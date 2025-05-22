@@ -67,7 +67,7 @@ public protocol UITraitApplying : Equatable, Hashable {
 
 extension UITraitApplying {
 	
-	public static func ==(lhs:any UITraitApplying, rhs:any UITraitApplying)->Bool {
+	public static func ==(lhs:Self, rhs:Self)->Bool {
 		lhs.isEqualTo(rhs)
 	}
 	
