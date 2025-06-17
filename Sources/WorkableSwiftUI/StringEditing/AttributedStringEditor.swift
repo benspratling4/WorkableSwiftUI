@@ -103,6 +103,9 @@ struct AttributedStringEditorImpl : UIViewRepresentable {
 		textView.textContainer.lineFragmentPadding = 0
 		textView.isEditable = true
 		textView.isSelectable = true
+		if #unavailable(iOS 16.0) {
+			textView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+		}
 		if #available(iOS 17.0, *) {
 			textView.inlinePredictionType = .no
 		}
