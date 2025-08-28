@@ -20,4 +20,15 @@ extension Array where Element : Identifiable {
 		}
 	}
 	
+	
+	public mutating func prependContentsWithoutCrashingFromDuplicates(_ contents:[Element]) {
+		var allIds:Set<Element.ID> = Set(self.map({ $0.id }))
+		for item in contents.reversed() {
+			if !allIds.contains(item.id) {
+				self.insert(item, at: 0)
+				allIds.insert(item.id)
+			}
+		}
+	}
+	
 }

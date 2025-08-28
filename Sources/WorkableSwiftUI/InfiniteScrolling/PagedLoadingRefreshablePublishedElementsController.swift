@@ -34,7 +34,12 @@ open class PagedLoadingRefreshablePublishedElementsController<Element> : Refresh
 		if isRefreshing {
 			elements = []
 		}
-		elements.appendContentsWithoutCrashingFromDuplicates(newPage)
+		if prepends {
+			elements.prependContentsWithoutCrashingFromDuplicates(newPage)
+		}
+		else {
+			elements.appendContentsWithoutCrashingFromDuplicates(newPage)
+		}
 	}
 	
 	@MainActor open func didCompleteLoad() {
@@ -44,6 +49,10 @@ open class PagedLoadingRefreshablePublishedElementsController<Element> : Refresh
 		}
 		triggerFetchMoreIfNeeded()
 	}
+	
+	
+	///if set to true, appendPageOfElements(...) will prepend elements instead of appending
+	public var prepends:Bool = false
 	
 	//TODO: cancel loading
 	
