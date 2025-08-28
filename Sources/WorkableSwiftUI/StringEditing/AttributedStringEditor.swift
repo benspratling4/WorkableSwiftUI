@@ -68,6 +68,9 @@ struct AttributedStringEditorImpl : UIViewRepresentable {
 	@Environment(\.attributedStringEditorPasteHandlers)
 	var attributedStringEditorPasteHandlers
 	
+	@Environment(\.attributedStringEditorSubclass)
+	var attributedStringEditorSubclass
+	
 	
 	func resolvingPasteConfiguration(textView:AttributedStringEditorTextView, context: Context) {
 		let types:[String] = [UTType](attributedStringEditorPasteHandlers.keys).map(\.identifier)
@@ -96,7 +99,9 @@ struct AttributedStringEditorImpl : UIViewRepresentable {
 	//MARK: - UIViewRepresentable
 	
 	func makeUIView(context: Context) -> AttributedStringEditorTextView {
-		let textView = AttributedStringEditorTextView(frame: CGRect(origin: .zero, size: CGSize(width: 300.0, height: 60.0)))
+		let textViewSubclass = attributedStringEditorSubclass ?? AttributedStringEditorTextView.self
+		
+		let textView:AttributedStringEditorTextView = textViewSubclass.init(frame: CGRect(origin: .zero, size: CGSize(width: 300.0, height: 60.0)))
 		textView.isScrollEnabled = false
 		textView.translatesAutoresizingMaskIntoConstraints = false
 		textView.textContainerInset = .zero
@@ -361,10 +366,10 @@ extension AttributedStringEditorImpl  {
 
 
 @available(iOS 15.0, *)
-class AttributedStringEditorTextView : UITextView {
+open class AttributedStringEditorTextView : UITextView {
 	
 	
-	override func canPaste(_ itemProviders: [NSItemProvider]) -> Bool {
+	open override func canPaste(_ itemProviders: [NSItemProvider]) -> Bool {
 		//if any item provider has data for any of the types in our supported array, use it
 		guard let pasteConfiguration else { return false }
 		for identifier in pasteConfiguration.acceptableTypeIdentifiers {
@@ -379,7 +384,7 @@ class AttributedStringEditorTextView : UITextView {
 	}
 	
 	
-	override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+	open override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
 		if action == #selector(UIResponderStandardEditActions.paste(_:)) {
 			return canPaste(UIPasteboard.general.itemProviders) ?? false
 		}
@@ -388,7 +393,7 @@ class AttributedStringEditorTextView : UITextView {
 		}
 	}
 	
-	override func paste(itemProviders: [NSItemProvider]) {
+	open override func paste(itemProviders: [NSItemProvider]) {
 //		print("paste \(itemProviders)")
 		if let coordinator = delegate as? AttributedStringEditorImpl.Coordinator {
 			coordinator.handlePaste(self, itemProviders: itemProviders)
@@ -398,7 +403,7 @@ class AttributedStringEditorTextView : UITextView {
 		}
 	}
 	
-	override func paste(_ sender: Any?) {
+	open override func paste(_ sender: Any?) {
 //		print("paste(sender)")
 		if let coordinator = delegate as? AttributedStringEditorImpl.Coordinator {
 			coordinator.handlePaste(self, itemProviders: UIPasteboard.general.itemProviders)
