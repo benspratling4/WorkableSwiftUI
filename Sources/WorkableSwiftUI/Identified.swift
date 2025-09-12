@@ -83,31 +83,31 @@ extension Collection where Element : Identifying {
 ///for convenience, enable [Identified<SomeType>] to work as if it is a [SomeType]
 extension Array where Element : Identifying {
 	
-	public init<S>(_ elements: S) where S : Sequence, Element.Value == S.Element {
+	public init<S>(identifying elements: S) where S : Sequence, Element.Value == S.Element {
 		self = elements.map({ Element($0) })
 	}
 	
-	public mutating func insert(_ newElement: Element.Value, at i: Int) {
+	public mutating func insertIdentifying(_ newElement: Element.Value, at i: Int) {
 		insert(Element(newElement), at: i)
 	}
 	
-	public mutating func remove(at position: Int) -> Element.Value {
+	public mutating func removeIdentifying(at position: Int) -> Element.Value {
 		return remove(at: position).wrappedValue
 	}
-	public mutating func append<S>(contentsOf newElements: S) where S : Sequence, Element.Value == S.Element {
-		append(contentsOf: Self(newElements))
+	public mutating func appendIdentifying<S>(contentsOf newElements: S) where S : Sequence, Element.Value == S.Element {
+		append(contentsOf: Self(identifying:newElements))
 	}
 	
-	public mutating func append(_ element:Element.Value) {
+	public mutating func appendIdentifying(_ element:Element.Value) {
 		append(Element.init(element))
 	}
 	
-	public subscript(bounds: Range<Int>) -> Array<Element.Value> {
+	public subscript(identifyingBounds bounds: Range<Int>) -> Array<Element.Value> {
 		return self[bounds].map({ $0.wrappedValue })
 	}
 	
 	//somehow the compiler is just not ok with ever picking this one
-	public subscript(index: Int) -> Element.Value {
+	public subscript(identifyingIndex index: Int) -> Element.Value {
 		get {
 			return self[index].wrappedValue
 		}
